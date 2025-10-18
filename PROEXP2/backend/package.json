@@ -1,0 +1,38 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-list-endpoints": "^7.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "mssql": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.17",
+    "@types/jsonwebtoken": "^9.0.1",
+    "nodemon": "^3.0.1"
+  },
+  "author": "Jhancarlos",
+  "license": "ISC",
+  "description": "Proyecto Final - Backend",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tu_usuario/tu_repositorio.git"
+  },
+  "tipo_documento": "DNI",
+  "documento": "12345678",
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/tu_usuario/tu_repositorio/issues"
+  },
+  "homepage": "https://github.com/tu_usuario/tu_repositorio#readme"
+}

@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PROEXP2", "PROEXP2", "{6C8646FA-B229-8305-EB76-0E7A5DCEDE5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendApp", "PROEXP2\BackendApp\BackendApp.csproj", "{722E56D3-2945-61B4-A615-A784F40E0142}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{722E56D3-2945-61B4-A615-A784F40E0142}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{722E56D3-2945-61B4-A615-A784F40E0142}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{722E56D3-2945-61B4-A615-A784F40E0142}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{722E56D3-2945-61B4-A615-A784F40E0142}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{722E56D3-2945-61B4-A615-A784F40E0142} = {6C8646FA-B229-8305-EB76-0E7A5DCEDE5A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EC807497-067B-4CEE-98E2-D8622909AC52}
+	EndGlobalSection
+EndGlobal
