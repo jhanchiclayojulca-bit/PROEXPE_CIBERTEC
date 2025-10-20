@@ -11,8 +11,9 @@ type Props = {
 export default function CrearFactura({ onClose, onCreated }: Props) {
   const [nroPedido, setNroPedido] = useState('');
   const [detalles, setDetalles] = useState<
-    Array<{ id_producto: string; Nombre_producto: string; Precio_unitario: number; Cantidad: number; Subtotal: number }>
-  >([]);
+  Array<{ id_producto: number; Nombre_producto: string; Precio_unitario: number; Cantidad: number; Subtotal: number }>
+>([]);
+
   const [submitting, setSubmitting] = useState(false);
 
   const cargarPedido = async () => {
@@ -20,19 +21,20 @@ export default function CrearFactura({ onClose, onCreated }: Props) {
     try {
       // Trae el detalle del pedido desde tu API
       // Ahora
-      const pedido: any = await api.pedidos.getDetalle(`${nroPedido}/detalle`);
-      if (!pedido || !pedido.detalle) {
-        alert('Pedido no encontrado o vacío');
+      const pedido: any = await api.pedidos.getDetalle(Number(nroPedido));
+      if (!pedido || pedido.length === 0) {
+        alert("Pedido no encontrado o vacío");
         return;
       }
 
-      const detallesPedido = pedido.detalle.map((d: any) => ({
-        id_producto: d.id_producto,
-        Nombre_producto: d.Nombre_producto || d.nombre_producto || '',
-        Precio_unitario: d.Precio_unitario || d.precio,
+      const detallesPedido = pedido.map((d: any) => ({
+        id_producto: d.Id_producto,  // asegúrate de que coincida con tu SELECT
+        Nombre_producto: d.Nombre_producto,
+        Precio_unitario: d.Precio_unitario,
         Cantidad: d.Cantidad,
-        Subtotal: (d.Precio_unitario || d.precio) * d.Cantidad,
+        Subtotal: d.Subtotal,
       }));
+
 
       setDetalles(detallesPedido);
     } catch (error) {

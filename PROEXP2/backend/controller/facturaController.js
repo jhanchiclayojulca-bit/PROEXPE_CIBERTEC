@@ -1,90 +1,101 @@
-import { getConnection } from "../db.js";
+import { getConnection, sql } from "../db.js";
 
-// ================= GET ==================
-
-// Obtener todas las facturas con nombre de empleado concatenado
+/* ============================
+   🔹 Obtener todas las facturas
+   ============================ */
 export const getFacturas = async (req, res) => {
   try {
     const pool = await getConnection();
     const result = await pool.request().query(`
-      SELECT f.Id_factura, f.Fecha, f.Tipo, e.cod_empleado,
-             COALESCE(p.nombre1,'') + ' ' + COALESCE(p.nombre2,'') + ' ' +
-             COALESCE(p.apellido_paterno,'') + ' ' + COALESCE(p.apellido_materno,'') AS empleado
+      SELECT 
+        f.Id_factura,
+        FORMAT(f.Fecha, 'yyyy-MM-dd') AS Fecha,
+        CONVERT(VARCHAR(5), f.Hora, 108) AS Hora,
+        f.Tipo,
+        per.nombre1 + ' ' + ISNULL(per.nombre2, '') + ' ' + per.apellido_paterno AS empleado
       FROM Factura f
       JOIN Empleado e ON f.cod_empleado = e.cod_empleado
-      JOIN Persona p ON e.id_persona = p.id_persona
+      JOIN Persona per ON e.id_persona = per.id_persona
       ORDER BY f.Id_factura DESC
     `);
+
     res.json(result.recordset);
-  } catch (error) {
-    console.error("❌ Error al obtener facturas:", error);
-    res.status(500).json({ message: "Error al obtener facturas", error: error.message });
+  } catch (err) {
+    console.error("❌ Error al obtener facturas:", err);
+    res.status(500).json({ message: "Error al obtener facturas", error: err.message });
   }
 };
 
-// Obtener detalle de una factura
+/* ============================
+   🔹 Obtener detalle de una factura
+   ============================ */
 export const getDetalleFactura = async (req, res) => {
   try {
     const { id } = req.params;
     const pool = await getConnection();
+
     const result = await pool.request()
-      .input("id", id)
+      .input("Id_factura", sql.Int, id)
       .query(`
-        SELECT df.Id_detalle_factura, df.Cantidad, df.Subtotal, 
-               pr.Nombre_producto, pr.Precio_unitario
+        SELECT 
+          df.Id_detalle_factura,
+          p.Nombre_producto,
+          p.Precio_unitario,
+          df.Cantidad,
+          df.Subtotal
         FROM Detalle_Factura df
-        JOIN Producto pr ON df.Id_producto = pr.Id_producto
-        WHERE df.Id_factura = @id
+        JOIN Producto p ON df.Id_producto = p.Id_producto
+        WHERE df.Id_factura = @Id_factura
       `);
+
     res.json(result.recordset);
-  } catch (error) {
-    console.error("❌ Error al obtener detalle de factura:", error);
-    res.status(500).json({ message: "Error al obtener detalle", error: error.message });
+  } catch (err) {
+    console.error("❌ Error al obtener detalle factura:", err);
+    res.status(500).json({ message: "Error al obtener detalle factura", error: err.message });
   }
 };
 
-// ================= POST ==================
-
-// Crear una factura con detalle
+/* ============================
+   🔹 Crear una nueva factura
+   ============================ */
 export const createFactura = async (req, res) => {
-  const { cod_empleado, Fecha, Tipo, detalle } = req.body;
+  const { cod_empleado, Tipo, detalle } = req.body;
 
-  if (!cod_empleado || !Fecha || !Tipo || !detalle || detalle.length === 0) {
-    return res.status(400).json({ message: "Todos los campos son obligatorios" });
+  if (!cod_empleado || !detalle || detalle.length === 0) {
+    return res.status(400).json({ message: "Faltan datos obligatorios de la factura" });
   }
 
   try {
     const pool = await getConnection();
 
-    // Insertar factura y obtener Id_factura generado
-    const resultFactura = await pool.request()
+    // 1️⃣ Insertar factura
+    const facturaResult = await pool.request()
       .input("cod_empleado", cod_empleado)
-      .input("Fecha", Fecha)
-      .input("Tipo", Tipo)
+      .input("Tipo", Tipo || "Factura")
       .query(`
-        INSERT INTO Factura (cod_empleado, Fecha, Tipo)
-        OUTPUT INSERTED.Id_factura
-        VALUES (@cod_empleado, @Fecha, @Tipo)
+        INSERT INTO Factura (cod_empleado, Tipo)
+        OUTPUT INSERTED.Id_factura, INSERTED.Fecha, INSERTED.Hora, INSERTED.Tipo
+        VALUES (@cod_empleado, @Tipo)
       `);
 
-    const Id_factura = resultFactura.recordset[0].Id_factura;
+    const newFactura = facturaResult.recordset[0];
 
-    // Insertar detalle de la factura
-    for (const item of detalle) {
+    // 2️⃣ Insertar detalle
+    for (const d of detalle) {
       await pool.request()
-        .input("Id_factura", Id_factura)
-        .input("Id_producto", item.Id_producto)
-        .input("Cantidad", item.Cantidad)
-        .input("Subtotal", item.Subtotal)
+        .input("Id_factura", newFactura.Id_factura)
+        .input("Id_producto", d.Id_producto)
+        .input("Cantidad", d.Cantidad)
+        .input("Subtotal", d.Subtotal)
         .query(`
           INSERT INTO Detalle_Factura (Id_factura, Id_producto, Cantidad, Subtotal)
           VALUES (@Id_factura, @Id_producto, @Cantidad, @Subtotal)
         `);
     }
 
-    res.status(201).json({ message: "Factura creada correctamente", Id_factura });
-  } catch (error) {
-    console.error("❌ Error al crear factura:", error);
-    res.status(500).json({ message: "Error al crear factura", error: error.message });
+    res.json({ message: "✅ Factura creada correctamente", factura: newFactura });
+  } catch (err) {
+    console.error("❌ Error al crear factura:", err);
+    res.status(500).json({ message: "Error al crear factura", error: err.message });
   }
 };

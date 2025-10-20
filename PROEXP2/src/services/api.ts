@@ -1,83 +1,94 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = "http://localhost:3001/api";
+
+async function get(endpoint: string) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`);
+  if (!response.ok) throw new Error("Error en la solicitud GET");
+  return response.json();
+}
+
+async function post(endpoint: string, data: unknown) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Error en la solicitud POST");
+  return response.json();
+}
+
+async function put(endpoint: string, data: unknown) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Error en la solicitud PUT");
+  return response.json();
+}
+
+async function del(endpoint: string) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, { method: "DELETE" });
+  if (!response.ok) throw new Error("Error en la solicitud DELETE");
+  return response.json();
+}
 
 export const api = {
-  async get(endpoint: string) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`);
-    if (!response.ok) throw new Error('Error en la solicitud');
-    return response.json();
-  },
+  get,
+  post,
+  put,
+  delete: del,
 
-  async post(endpoint: string, data: unknown) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Error en la solicitud');
-    return response.json();
+  pedidos: {
+    getAll: () => get("/pedidos"),
+    getDetalle: (id: number) => get(`/pedidos/${id}/detalle`), // 👈 ahora recibe number
+    create: (data: unknown) => post("/pedidos", data),
   },
+  
+reservas: {
+  // ✅ Crear reserva con nombre_cliente (el backend crea cliente + reserva)
+  create: (data: {
+    nombre_cliente: string;
+    cod_sede: number;
+    fecha: string;
+    hora: string;
+    cantidad_personas: number;
+    comentario?: string;
+  }) => post("/reservas", data),
 
-  async put(endpoint: string, data: unknown) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Error en la solicitud');
-    return response.json();
-  },
+  // ✅ Obtener todas
+  getAll: () => get("/reservas"),
+},
 
-  async delete(endpoint: string) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('Error en la solicitud');
-    return response.json();
+
+  reportes: {
+    ventasEmpleado: () => get("/reportes/ventas-empleado"),
+    productosTop: () => get("/reportes/productos-top"),
+    ingresosDiarios: () => get("/reportes/ingresos-diarios"),
   },
 
   productos: {
-    getAll: () => api.get('/productos'),
+    getAll: () => get("/productos"),
   },
 
   clientes: {
-    getAll: () => api.get('/clientes'),
+    // ✅ Crear cliente nuevo
+    create: (data: { nombre_cliente: string }) => post("/clientes", data),
+    getAll: () => get("/clientes"),
   },
 
+
   empleados: {
-    getAll: () => api.get('/empleados'),
-    getById: (id: string) => api.get(`/empleado/${id}`),
+    getAll: () => get("/empleados"),
+    getById: (id: string) => get(`/empleado/${id}`),
   },
 
   facturas: {
-    getAll: () => api.get('/facturas'),
-    getByFecha: (fecha: string) => api.get(`/facturas/fecha/${fecha}`),
-    getDetalle: (id: string) => api.get(`/factura/${id}/detalle`),
-    create: (data: unknown) => api.post('/facturas', data),
-  },
-
-  pedidos: {
-    getAll: () => api.get('/pedidos'),
-    getDetalle: (id: string) => api.get(`/pedido/${id}/detalle`),
-    create: (data: unknown) => api.post('/pedidos', data),
-  },
-
-  reservas: {
-    getAll: () => api.get('/reservas'),
-    getById: (id: string) => api.get(`/reservas/${id}`), // 👈 para obtener una reserva específica
-    create: (data: unknown) => api.post('/reservas', data), // 👈 crear nueva reserva
-    update: (id: string, data: unknown) => api.put(`/reservas/${id}`, data), // 👈 opcional
-    delete: (id: string) => api.delete(`/reservas/${id}`), // 👈 opcional
-  },
+  getAll: () => get("/facturas"),
+  getDetalle: (id: number) => api.get(`/facturas/${id}/detalle`),
+  create: (data: any) => api.post("/facturas", data),
+},
 
   sedes: {
-    getAll: () => api.get('/sedes'),
-  },
-
-  reportes: {
-    ventasEmpleado: () => api.get('/reportes/ventas-empleado'),
-    productosTop: () => api.get('/reportes/productos-top'),
-    ingresosDiarios: () => api.get('/reportes/ingresos-diarios'),
-  },
-
-  reclamos: {
-    getAll: () => api.get('/reclamos'),
+    getAll: () => get("/sedes"),
   },
 };

@@ -24,4 +24,4 @@ export async function getConnection() {
   }
 }
 
-export { dbConfig };
+export { dbConfig , sql};

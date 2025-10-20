@@ -1,10 +1,17 @@
+import { getConnection } from "../dbConfig.js";
+
 export const getProductos = async (req, res) => {
   try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query("SELECT * FROM Producto");
+    const pool = await getConnection();
+    const result = await pool.request().query(`
+      SELECT 
+        Id_producto AS id_producto,
+        Nombre_producto AS nombre_producto,
+        Precio_unitario AS precio
+      FROM Producto
+    `);
     res.json(result.recordset);
   } catch (err) {
-    console.error("Error al obtener productos:", err);
-    res.status(500).json({ error: "Error al obtener productos" });
+    res.status(500).json({ message: "Error al obtener productos", error: err.message });
   }
 };

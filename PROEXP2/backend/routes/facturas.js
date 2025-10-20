@@ -1,10 +1,10 @@
-import { Router } from "express";
+import express from "express";
 import { getFacturas, getDetalleFactura, createFactura } from "../controller/facturaController.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get("/", getFacturas);
-router.get("/:id", getDetalleFactura);
-router.post("/", createFactura);
+router.get("/", getFacturas);             // GET todas las facturas
+router.get("/:id/detalle", getDetalleFactura);
+router.post("/", createFactura);          // POST nueva factura
 
 export default router;

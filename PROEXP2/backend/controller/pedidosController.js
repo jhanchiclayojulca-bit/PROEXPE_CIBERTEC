@@ -1,4 +1,5 @@
-import { getConnection } from "../database/connection.js";
+import { getConnection } from "../db.js";
+
 
 export const getPedidos = async (req, res) => {
   try {

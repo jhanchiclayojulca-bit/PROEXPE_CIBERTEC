@@ -1,9 +1,12 @@
-import { Router } from "express";
-import { getReservas, createReserva } from "../controller/reservasController.js";
+import express from "express";
+import { obtenerReservas, crearReserva } from "../controller/reservasController.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get("/", getReservas);
-router.post("/", createReserva);
+// ✅ Obtener todas las reservas
+router.get("/", obtenerReservas);
+
+// ✅ Crear una nueva reserva
+router.post("/", crearReserva);
 
 export default router;

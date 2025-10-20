@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Download, Eye, Plus } from 'lucide-react';
+import { FileText, Download, Eye, Plus , X} from 'lucide-react';
 import { api } from '../services/api';
 import { generarFactura } from '../utils/pdfGenerator';
 import type { Factura, DetalleFactura } from '../types/index';
@@ -16,6 +16,27 @@ export default function Facturas() {
     loadFacturas();
   }, []);
 
+  // Cerrar modal con tecla ESC
+useEffect(() => {
+  if (!selectedFactura) return;
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') setSelectedFactura(null);
+  };
+  window.addEventListener('keydown', onKeyDown);
+  return () => window.removeEventListener('keydown', onKeyDown);
+}, [selectedFactura]);
+
+// Bloquear scroll del body cuando el modal está abierto
+useEffect(() => {
+  if (selectedFactura) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+  return () => { document.body.style.overflow = ''; };
+}, [selectedFactura]);
+
+
   const loadFacturas = async () => {
     try {
       const data = await api.facturas.getAll();
@@ -29,7 +50,7 @@ export default function Facturas() {
 
   const verDetalle = async (factura: Factura) => {
     try {
-      const data = await api.facturas.getDetalle(factura.Id_factura);
+      const data = await api.facturas.getDetalle(Number(factura.Id_factura));
       setDetalle(data);
       setSelectedFactura(factura);
     } catch (error) {
@@ -52,6 +73,7 @@ export default function Facturas() {
       );
     }
   };
+
 
   if (loading) {
     return (
@@ -143,109 +165,109 @@ export default function Facturas() {
         </div>
       </div>
 
-      {/* Modal de detalle de factura */}
-      {selectedFactura && detalle.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">
-              Detalle de {selectedFactura.Tipo}: {selectedFactura.Id_factura}
-            </h3>
-            <div className="flex gap-2">
-              <button
-                onClick={descargarPDF}
-                className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Descargar PDF
-              </button>
-              <button
-                onClick={() => setSelectedFactura(null)}
-                className="text-gray-500 hover:text-gray-700 px-4 py-2"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-
-          {/* Info general */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-            <div>
-              <p className="text-sm text-gray-600">Fecha</p>
-              <p className="font-semibold">{new Date(selectedFactura.Fecha).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Hora</p>
-              <p className="font-semibold">{selectedFactura.Hora}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Tipo</p>
-              <p className="font-semibold">{selectedFactura.Tipo}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Atendido por</p>
-              <p className="font-semibold">{selectedFactura.empleado}</p>
-            </div>
-          </div>
-
-          {/* Detalle de productos */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Producto
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Precio Unit.
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Cantidad
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Subtotal
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {detalle.map((item) => (
-                  <tr key={item.Id_detalle_factura}>
-                    <td className="px-4 py-3 text-sm text-gray-900">{item.Nombre_producto}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      S/ {item.Precio_unitario?.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{item.Cantidad}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      S/ {item.Subtotal.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Totales */}
-          <div className="mt-6 space-y-2 text-right">
-            <div className="flex justify-end gap-4">
-              <span className="text-gray-600">Subtotal:</span>
-              <span className="font-semibold">
-                S/ {detalle.reduce((sum, item) => sum + item.Subtotal, 0).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-end gap-4">
-              <span className="text-gray-600">IGV (18%):</span>
-              <span className="font-semibold">
-                S/ {(detalle.reduce((sum, item) => sum + item.Subtotal, 0) * 0.18).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-end gap-4 text-xl pt-2 border-t-2">
-              <span className="text-gray-800 font-bold">TOTAL:</span>
-              <span className="text-red-600 font-bold">
-                S/ {(detalle.reduce((sum, item) => sum + item.Subtotal, 0) * 1.18).toFixed(2)}
-              </span>
-            </div>
-          </div>
+{/* Modal flotante de detalle */}
+{selectedFactura && detalle.length > 0 && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    onClick={() => setSelectedFactura(null)} // click fuera cierra
+  >
+    <div
+      className="bg-white rounded-xl w-full max-w-4xl p-6 shadow-xl"
+      onClick={(e) => e.stopPropagation()} // evita cerrar al hacer click dentro
+    >
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold text-gray-800">
+          Detalle de comprobante
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={descargarPDF}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Descargar PDF
+          </button>
+          <button
+            onClick={() => setSelectedFactura(null)}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Info general */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div>
+          <p className="text-sm text-gray-600">Fecha</p>
+          <p className="font-semibold">
+            {new Date(selectedFactura.Fecha).toLocaleDateString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600">Hora</p>
+          <p className="font-semibold">{selectedFactura.Hora}</p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600">Tipo</p>
+          <p className="font-semibold">{selectedFactura.Tipo}</p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600">Atendido por</p>
+          <p className="font-semibold">{selectedFactura.empleado}</p>
+        </div>
+      </div>
+
+      {/* Detalle de productos */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio Unit.</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {detalle.map((item) => (
+              <tr key={item.Id_detalle_factura}>
+                <td className="px-4 py-3 text-sm text-gray-900">{item.Nombre_producto}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">S/ {item.Precio_unitario?.toFixed(2)}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">{item.Cantidad}</td>
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">S/ {item.Subtotal.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Totales */}
+      <div className="mt-6 space-y-2 text-right">
+        <div className="flex justify-end gap-4">
+          <span className="text-gray-600">Subtotal:</span>
+          <span className="font-semibold">
+            S/ {detalle.reduce((sum, item) => sum + item.Subtotal, 0).toFixed(2)}
+          </span>
+        </div>
+        <div className="flex justify-end gap-4">
+          <span className="text-gray-600">IGV (18%):</span>
+          <span className="font-semibold">
+            S/ {(detalle.reduce((sum, item) => sum + item.Subtotal, 0) * 0.18).toFixed(2)}
+          </span>
+        </div>
+        <div className="flex justify-end gap-4 text-xl pt-2 border-t-2">
+          <span className="text-gray-800 font-bold">TOTAL:</span>
+          <span className="text-red-600 font-bold">
+            S/ {(detalle.reduce((sum, item) => sum + item.Subtotal, 0) * 1.18).toFixed(2)}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Modal Crear Factura */}
       {showCrear && (

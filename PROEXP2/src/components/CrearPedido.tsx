@@ -9,32 +9,32 @@ type Props = {
 };
 
 type Producto = {
-  id_producto: string;
+  id_producto: number;
   nombre_producto: string;
-  precio: number;
+  precio: number | null; // 👈 puede venir null de la BD
 };
 
+
 type Empleado = {
-  id: string;
+  id: string;   // cod_empleado (E00001, etc.)
   nombre: string;
 };
 
 export default function CrearPedido({ onClose, onCreated }: Props) {
-  const [Nro_pedido, setNroPedido] = useState('');
   const [fecha_pedido, setFechaPedido] = useState(new Date().toISOString().slice(0, 10));
-  const [documento, setDocumento] = useState('');
-  const [empleado, setEmpleado] = useState('');
+  const [clienteNombre, setClienteNombre] = useState('');
+  const [empleado, setEmpleado] = useState('');   // aquí guardamos el cod_empleado (E00001)
   const [productos, setProductos] = useState<Producto[]>([]);
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [detalles, setDetalles] = useState<
-    Array<{ id_producto: string; Precio_unitario: number; Cantidad: number }>
-  >([{ id_producto: '', Precio_unitario: 0, Cantidad: 1 }]);
+  Array<{ id_producto: number | null; Precio_unitario: number | null; Cantidad: number }>
+>([{ id_producto: null, Precio_unitario: null, Cantidad: 1 }]);
+
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadProductos();
     loadEmpleados();
-    generarNroPedido();
   }, []);
 
   const loadProductos = async () => {
@@ -55,84 +55,80 @@ export default function CrearPedido({ onClose, onCreated }: Props) {
     }
   };
 
-  const generarNroPedido = async () => {
-  try {
-    const pedidos = await api.pedidos.getAll();
-    let maxNro = 0;
-    pedidos.forEach((p: any) => {
-      const nro = Number(p.Nro_pedido);
-      if (!isNaN(nro) && nro > maxNro) maxNro = nro;
-    });
-    const nuevoNro = maxNro + 1;
-    setNroPedido(nuevoNro.toString().padStart(5, '0')); // rellena con ceros
-  } catch (error) {
-    console.error('Error al generar Nro. de pedido:', error);
-    setNroPedido('00001'); // fallback
-  }
-};
+ const setDetalleField = (i: number, field: string, value: string | number) => {
+  setDetalles((prev) => {
+    const copy = [...prev];
+    // @ts-ignore
+    copy[i][field] = value;
+
+         if (field === 'id_producto') {
+           const prod = productos.find((p) => p.id_producto === Number(value));
+           copy[i].Precio_unitario = prod?.precio ?? null;
+         }
 
 
-  const setDetalleField = (i: number, field: string, value: string | number) => {
-    setDetalles((prev) => {
-      const copy = [...prev];
-      // @ts-ignore
-      copy[i][field] = value;
+          return copy;
+        });
+      };
 
-      if (field === 'id_producto') {
-        const prod = productos.find((p) => p.id_producto === value);
-        if (prod) copy[i].Precio_unitario = prod.precio;
-      }
-
-      return copy;
-    });
-  };
 
   const addRow = () =>
-    setDetalles((prev) => [...prev, { id_producto: '', Precio_unitario: 0, Cantidad: 1 }]);
+    setDetalles((prev) => [...prev, { id_producto: null, Precio_unitario: 0, Cantidad: 1 }]);
 
   const removeRow = (i: number) => setDetalles((prev) => prev.filter((_, idx) => idx !== i));
 
   const handleCreate = async () => {
-    if (!Nro_pedido || !empleado) {
-      alert('Complete Nro. pedido y Empleado');
-      return;
-    }
+  if (!empleado) {
+    alert('Seleccione un empleado');
+    return;
+  }
 
-    const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
-    if (detalleValido.length === 0) {
-      alert('Agregue al menos un producto válido');
-      return;
-    }
+  if (!clienteNombre.trim()) {
+    alert('Ingrese el nombre del cliente');
+    return;
+  }
 
+const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
+  if (detalleValido.length === 0) {
+    alert('Agregue al menos un producto válido');
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    // 1️⃣ Crear cliente en la BD (devuelve el cod_cliente autogenerado)
+    const nuevoCliente = await api.clientes.create({ nombre_cliente: clienteNombre });
+    const codCliente = nuevoCliente.cod_cliente;
+
+    // 2️⃣ Crear pedido con ese cod_cliente
     const payload = {
-      Nro_pedido,
       fecha_pedido,
-      documento,
-      empleado,
-      detalle: detalleValido.map((d) => ({
-        id_producto: d.id_producto,
-        Precio_unitario: d.Precio_unitario,
+      cod_cliente: codCliente,
+      cod_empleado: empleado,
+      detalles: detalleValido.map((d) => ({
+        Id_producto: d.id_producto,
         Cantidad: d.Cantidad,
-        Subtotal: d.Precio_unitario * d.Cantidad,
+        Subtotal: (d.Precio_unitario ?? 0) * d.Cantidad,
       })),
     };
 
-    setSubmitting(true);
-    try {
-      const creado = await api.pedidos.create(payload);
-      if (creado) {
-        onCreated(creado as Pedido);
-        onClose();
-      } else {
-        alert('Pedido creado, pero respuesta inesperada del servidor.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error al crear pedido.');
-    } finally {
-      setSubmitting(false);
+    const creado = await api.pedidos.create(payload);
+
+    if (creado) {
+      onCreated(creado as Pedido);
+      onClose();
+    } else {
+      alert('Pedido creado, pero respuesta inesperada del servidor.');
     }
-  };
+  } catch (err) {
+    console.error('❌ Error al crear pedido:', err);
+    alert('Error al crear pedido.');
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -147,24 +143,22 @@ export default function CrearPedido({ onClose, onCreated }: Props) {
         {/* Campos principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <input
-            className="border border-gray-300 p-2 rounded-lg bg-gray-100"
-            placeholder="Nro. Pedido"
-            value={Nro_pedido}
-            readOnly
-          />
-          <input
             type="date"
             className="border border-gray-300 p-2 rounded-lg"
             value={fecha_pedido}
             onChange={(e) => setFechaPedido(e.target.value)}
           />
+
+          {/* ✅ Campo para el nombre del cliente */}
           <input
             className="border border-gray-300 p-2 rounded-lg"
-            placeholder="Documento / Cliente"
-            value={documento}
-            onChange={(e) => setDocumento(e.target.value)}
+            placeholder="Nombre y Apellido del Cliente"
+            value={clienteNombre}
+            onChange={(e) => setClienteNombre(e.target.value)}
           />
-          {/* Select de empleado */}
+
+
+          {/* Select de empleado (value = cod_empleado) */}
           <select
             className="border border-gray-300 p-2 rounded-lg"
             value={empleado}
@@ -172,11 +166,12 @@ export default function CrearPedido({ onClose, onCreated }: Props) {
           >
             <option value="">Seleccione empleado</option>
             {empleados.map((emp) => (
-              <option key={emp.id} value={emp.nombre}>
-                {emp.nombre}
+              <option key={emp.id} value={emp.id}>
+                {emp.nombre} {/* 👈 Se muestra el nombre */}
               </option>
             ))}
           </select>
+
         </div>
 
         {/* Detalle del pedido */}
@@ -188,30 +183,34 @@ export default function CrearPedido({ onClose, onCreated }: Props) {
                 key={i}
                 className="grid grid-cols-12 gap-2 items-center border border-gray-200 rounded-lg p-2"
               >
-                {/* Select de producto */}
+                {/* Producto */}
                 <select
                   className="col-span-5 border border-gray-300 p-2 rounded-lg"
-                  value={d.id_producto}
-                  onChange={(e) => setDetalleField(i, 'id_producto', e.target.value)}
+                  value={d.id_producto ?? ""}
+                  onChange={(e) => setDetalleField(i, 'id_producto', Number(e.target.value))}
                 >
                   <option value="">Seleccione producto</option>
                   {productos.map((p) => (
                     <option key={p.id_producto} value={p.id_producto}>
-                      {p.nombre_producto} — S/ {p.precio.toFixed(2)}
+                      {p.nombre_producto} — S/ {(p.precio ?? 0).toFixed(2)}
                     </option>
                   ))}
+
                 </select>
 
-                {/* Precio automático, no editable */}
+
+
+                {/* Precio automático */}
                 <input
                   type="number"
                   className="col-span-3 border border-gray-300 p-2 rounded-lg bg-gray-100"
                   placeholder="Precio"
-                  value={String(d.Precio_unitario)}
+                  value={d.Precio_unitario !== null ? String(d.Precio_unitario) : ""}
                   readOnly
                 />
 
-                {/* Cantidad editable */}
+
+                {/* Cantidad */}
                 <input
                   type="number"
                   className="col-span-2 border border-gray-300 p-2 rounded-lg"
@@ -220,7 +219,7 @@ export default function CrearPedido({ onClose, onCreated }: Props) {
                   onChange={(e) => setDetalleField(i, 'Cantidad', Number(e.target.value))}
                 />
 
-                {/* Botón eliminar fila */}
+                {/* Eliminar fila */}
                 <div className="col-span-2 flex justify-center">
                   <button
                     onClick={() => removeRow(i)}
