@@ -1,7 +1,20 @@
 const API_BASE_URL = "http://localhost:3001/api";
 
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+
 async function get(endpoint: string) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`);
+  const response = await fetch(`${API_BASE_URL}${endpoint}`,{
+     headers: getAuthHeaders() ,
+    });
   if (!response.ok) throw new Error("Error en la solicitud GET");
   return response.json();
 }
@@ -9,7 +22,7 @@ async function get(endpoint: string) {
 async function post(endpoint: string, data: unknown) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
   if (!response.ok) throw new Error("Error en la solicitud POST");
@@ -19,7 +32,7 @@ async function post(endpoint: string, data: unknown) {
 async function put(endpoint: string, data: unknown) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
   if (!response.ok) throw new Error("Error en la solicitud PUT");
@@ -27,7 +40,7 @@ async function put(endpoint: string, data: unknown) {
 }
 
 async function del(endpoint: string) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, { method: "DELETE" });
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, { method: "DELETE" , headers: getAuthHeaders() });
   if (!response.ok) throw new Error("Error en la solicitud DELETE");
   return response.json();
 }
@@ -37,6 +50,25 @@ export const api = {
   post,
   put,
   delete: del,
+
+    // 🔹 AUTH
+  auth: {
+    login: (data: { email: string; password: string }) => 
+      post("/auth/login", data),
+
+    register: (data: {
+      nombre: string;
+      apellido: string;
+      telefono: string;
+      email: string;
+      password: string;
+      rol: "admin" | "cliente";
+    }) => post("/auth/register", data),
+
+    logout: (token: string) => 
+      post("/auth/logout", { token }),
+  },
+
 
   pedidos: {
     getAll: () => get("/pedidos"),
@@ -59,15 +91,12 @@ reservas: {
   getAll: () => get("/reservas"),
 },
 
-
-  reportes: {
-    ventasEmpleado: () => get("/reportes/ventas-empleado"),
-    productosTop: () => get("/reportes/productos-top"),
-    ingresosDiarios: () => get("/reportes/ingresos-diarios"),
-  },
-
   productos: {
-    getAll: () => get("/productos"),
+    // ✅ GET todos los productos
+    getAll: () => get("/producto"),
+
+    // ✅ POST nuevo producto
+    create: (data: any) => post("/producto", data),
   },
 
   clientes: {
@@ -91,4 +120,20 @@ reservas: {
   sedes: {
     getAll: () => get("/sedes"),
   },
+
+
+reportes: {
+  // Dashboard
+  ventasDia: () => get("/reportes/ventas-dia"),
+  pedidosActivos: () => get("/reportes/pedidos-activos"),
+  facturasEmitidas: () => get("/reportes/facturas-emitidas"),
+  reservasHoy: () => get("/reportes/reservas-hoy"),
+  productosTop: () => get("/reportes/productos-top"),
+  empleadosRendimiento: () => get("/reportes/empleados-rendimiento"),
+
+  // Otros reportes adicionales
+  ventasEmpleado: () => get("/reportes/ventas-empleado"),
+  ingresosDiarios: () => get("/reportes/ingresos-diarios"),
+},
+
 };

@@ -112,9 +112,23 @@ router.post("/", async (req, res) => {
         `);
     }
 
-    
+    // 🔄 Recuperar pedido completo con joins
+const pedidoCompleto = await pool.request()
+  .input("id_pedido", newPedido.id_pedido)
+  .query(`
+    SELECT 
+      p.id_pedido,
+      FORMAT(p.fecha_pedido, 'yyyy-MM-dd') AS fecha_pedido,
+      c.nombre_cliente,
+      per.nombre1 + ' ' + ISNULL(per.nombre2,'') + ' ' + per.apellido_paterno AS empleado_nombre
+    FROM Pedido p
+    JOIN Cliente c ON p.cod_cliente = c.cod_cliente
+    JOIN Empleado e ON p.cod_empleado = e.cod_empleado
+    JOIN Persona per ON e.id_persona = per.id_persona
+    WHERE p.id_pedido = @id_pedido
+  `);
 
-    res.json({ message: "✅ Pedido creado correctamente", pedido: newPedido });
+    res.json({ message: "✅ Pedido creado correctamente", pedido: pedidoCompleto.recordset[0] });
   } catch (err) {
     console.error("❌ Error al crear pedido:", err);
     res.status(500).json({ message: "Error al crear pedido", error: err.message });

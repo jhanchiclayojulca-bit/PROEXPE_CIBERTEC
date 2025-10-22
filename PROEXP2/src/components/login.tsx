@@ -1,55 +1,57 @@
-import { useState } from 'react';
-import { ChefHat, Mail, Lock, User, Phone } from 'lucide-react';
+import { useState } from "react";
+import { ChefHat, Mail, Lock, User, Phone } from "lucide-react";
+import { api } from "../services/api"; // 👈 importamos tu cliente API
 
 type LoginProps = {
-  onLogin: (role: 'admin' | 'cliente') => void; // recibimos el rol
+  onLogin: (role: "admin" | "cliente") => void;
 };
 
 export default function Login({ onLogin }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    nombre: '',
-    apellido: '',
-    telefono: '',
-    rol: 'cliente' as 'admin' | 'cliente',
+    email: "",
+    password: "",
+    nombre: "",
+    apellido: "",
+    telefono: "",
+    rol: "cliente" as "admin" | "cliente",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Usuarios de prueba
-  const users: { email: string; password: string; rol: 'admin' | 'cliente' }[] = [
-    { email: 'admin@pardos.com', password: 'admin123', rol: 'admin' },
-    { email: 'cliente1@gmail.com', password: 'cliente123', rol: 'cliente' },
-  ];
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  try {
+    if (isLogin) {
+      // 🔑 LOGIN real
+      const data = await api.auth.login({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    setTimeout(() => {
-      if (isLogin) {
-        const user = users.find(
-          (u) => u.email === formData.email && u.password === formData.password
-        );
+      // Guardar en localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.rol); // 👈 usamos siempre "role"
+      localStorage.setItem("nombre", data.nombre);
 
-        if (!user) {
-          setError('Correo o contraseña incorrecta');
-        } else {
-          localStorage.setItem('token', 'fake-jwt-token'); // simulación
-          localStorage.setItem('role', user.rol);
-          onLogin(user.rol); // notificamos al padre el rol
-        }
-      } else {
-        // Registro simulado
-        alert('Registro exitoso (simulado). Ahora inicia sesión con tu usuario.');
-        setIsLogin(true);
-      }
-      setLoading(false);
-    }, 500);
-  };
+      onLogin(data.rol as "admin" | "cliente"); // 👈 corregido
+
+    } else {
+      // 📝 REGISTRO real
+      await api.auth.register(formData);
+      alert("✅ Registro exitoso, ahora inicia sesión."); 
+      setIsLogin(true);
+    }
+  } catch (err) {
+    setError("❌ Error en autenticación, revisa tus datos.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -72,14 +74,18 @@ export default function Login({ onLogin }: LoginProps) {
           <div className="p-8">
             <div className="flex gap-2 mb-6">
               <button
-                onClick={() => { setIsLogin(true); setError(''); }}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${isLogin ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                onClick={() => { setIsLogin(true); setError(""); }}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                  isLogin ? "bg-red-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
               >
                 Iniciar Sesión
               </button>
               <button
-                onClick={() => { setIsLogin(false); setError(''); }}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${!isLogin ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                onClick={() => { setIsLogin(false); setError(""); }}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                  !isLogin ? "bg-red-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
               >
                 Registrarse
               </button>
@@ -136,15 +142,19 @@ export default function Login({ onLogin }: LoginProps) {
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
               )}
 
-              <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                {loading ? 'Procesando...' : isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loading ? "Procesando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
               </button>
             </form>
-
-            
           </div>
         </div>
       </div>

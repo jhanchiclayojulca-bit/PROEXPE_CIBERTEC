@@ -11,24 +11,23 @@ type Props = {
 type Producto = {
   id_producto: number;
   nombre_producto: string;
-  precio: number | null; // 👈 puede venir null de la BD
+  precio_unitario: number | null;
 };
 
-
 type Empleado = {
-  id: string;   // cod_empleado (E00001, etc.)
+  id: string;   // cod_empleado
   nombre: string;
 };
 
 export default function CrearPedido({ onClose, onCreated }: Props) {
   const [fecha_pedido, setFechaPedido] = useState(new Date().toISOString().slice(0, 10));
   const [clienteNombre, setClienteNombre] = useState('');
-  const [empleado, setEmpleado] = useState('');   // aquí guardamos el cod_empleado (E00001)
+  const [empleado, setEmpleado] = useState('');
   const [productos, setProductos] = useState<Producto[]>([]);
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [detalles, setDetalles] = useState<
-  Array<{ id_producto: number | null; Precio_unitario: number | null; Cantidad: number }>
->([{ id_producto: null, Precio_unitario: null, Cantidad: 1 }]);
+    Array<{ id_producto: number | null; precio_unitario: number | null; cantidad: number }>
+  >([{ id_producto: null, precio_unitario: null, cantidad: 1 }]);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,14 +36,23 @@ export default function CrearPedido({ onClose, onCreated }: Props) {
     loadEmpleados();
   }, []);
 
-  const loadProductos = async () => {
-    try {
-      const data = await api.productos.getAll();
-      setProductos(data);
-    } catch (error) {
-      console.error('Error al cargar productos:', error);
-    }
-  };
+  // 🔹 Normalizamos los productos a minúsculas
+const loadProductos = async () => {
+  try {
+    const data = await api.productos.getAll();
+
+    const normalizados = data.map((p: any) => ({
+      id_producto: p.Id_producto,
+      nombre_producto: p.Nombre_producto,
+      precio_unitario: p.Precio_unitario,
+    }));
+
+    setProductos(normalizados);
+  } catch (error) {
+    console.error("Error al cargar productos:", error);
+  }
+};
+
 
   const loadEmpleados = async () => {
     try {
@@ -55,80 +63,75 @@ export default function CrearPedido({ onClose, onCreated }: Props) {
     }
   };
 
- const setDetalleField = (i: number, field: string, value: string | number) => {
-  setDetalles((prev) => {
-    const copy = [...prev];
-    // @ts-ignore
-    copy[i][field] = value;
+  const setDetalleField = (i: number, field: string, value: string | number) => {
+    setDetalles((prev) => {
+      const copy = [...prev];
+      // @ts-ignore
+      copy[i][field] = value;
 
-         if (field === 'id_producto') {
-           const prod = productos.find((p) => p.id_producto === Number(value));
-           copy[i].Precio_unitario = prod?.precio ?? null;
-         }
-
-
-          return copy;
-        });
-      };
-
+      if (field === 'id_producto') {
+        const prod = productos.find((p) => p.id_producto === Number(value));
+        copy[i].precio_unitario = prod?.precio_unitario ?? null;
+      }
+      return copy;
+    });
+  };
 
   const addRow = () =>
-    setDetalles((prev) => [...prev, { id_producto: null, Precio_unitario: 0, Cantidad: 1 }]);
+    setDetalles((prev) => [...prev, { id_producto: null, precio_unitario: 0, cantidad: 1 }]);
 
   const removeRow = (i: number) => setDetalles((prev) => prev.filter((_, idx) => idx !== i));
 
   const handleCreate = async () => {
-  if (!empleado) {
-    alert('Seleccione un empleado');
-    return;
-  }
-
-  if (!clienteNombre.trim()) {
-    alert('Ingrese el nombre del cliente');
-    return;
-  }
-
-const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
-  if (detalleValido.length === 0) {
-    alert('Agregue al menos un producto válido');
-    return;
-  }
-
-  try {
-    setSubmitting(true);
-
-    // 1️⃣ Crear cliente en la BD (devuelve el cod_cliente autogenerado)
-    const nuevoCliente = await api.clientes.create({ nombre_cliente: clienteNombre });
-    const codCliente = nuevoCliente.cod_cliente;
-
-    // 2️⃣ Crear pedido con ese cod_cliente
-    const payload = {
-      fecha_pedido,
-      cod_cliente: codCliente,
-      cod_empleado: empleado,
-      detalles: detalleValido.map((d) => ({
-        Id_producto: d.id_producto,
-        Cantidad: d.Cantidad,
-        Subtotal: (d.Precio_unitario ?? 0) * d.Cantidad,
-      })),
-    };
-
-    const creado = await api.pedidos.create(payload);
-
-    if (creado) {
-      onCreated(creado as Pedido);
-      onClose();
-    } else {
-      alert('Pedido creado, pero respuesta inesperada del servidor.');
+    if (!empleado) {
+      alert('Seleccione un empleado');
+      return;
     }
-  } catch (err) {
-    console.error('❌ Error al crear pedido:', err);
-    alert('Error al crear pedido.');
-  } finally {
-    setSubmitting(false);
-  }
-};
+    if (!clienteNombre.trim()) {
+      alert('Ingrese el nombre del cliente');
+      return;
+    }
 
+    const detalleValido = detalles.filter((d) => d.id_producto && d.cantidad > 0);
+    if (detalleValido.length === 0) {
+      alert('Agregue al menos un producto válido');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Crear cliente en BD
+      const nuevoCliente = await api.clientes.create({ nombre_cliente: clienteNombre });
+      const codCliente = nuevoCliente.cod_cliente;
+
+      // Payload
+      const payload = {
+        fecha_pedido,
+        cod_cliente: codCliente,
+        cod_empleado: empleado,
+        detalles: detalleValido.map((d) => ({
+          Id_producto: d.id_producto, // 👈 backend espera con mayúscula
+          Cantidad: d.cantidad,
+          Subtotal: (d.precio_unitario ?? 0) * d.cantidad,
+        })),
+      };
+
+      const creado = await api.pedidos.create(payload);
+
+      if (creado) {
+        onCreated(creado.pedido);
+        onClose();
+      } else {
+        alert('Pedido creado, pero respuesta inesperada del servidor.');
+      }
+    } catch (err) {
+      console.error('❌ Error al crear pedido:', err);
+      alert('Error al crear pedido.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -148,17 +151,12 @@ const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
             value={fecha_pedido}
             onChange={(e) => setFechaPedido(e.target.value)}
           />
-
-          {/* ✅ Campo para el nombre del cliente */}
           <input
             className="border border-gray-300 p-2 rounded-lg"
             placeholder="Nombre y Apellido del Cliente"
             value={clienteNombre}
             onChange={(e) => setClienteNombre(e.target.value)}
           />
-
-
-          {/* Select de empleado (value = cod_empleado) */}
           <select
             className="border border-gray-300 p-2 rounded-lg"
             value={empleado}
@@ -167,11 +165,10 @@ const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
             <option value="">Seleccione empleado</option>
             {empleados.map((emp) => (
               <option key={emp.id} value={emp.id}>
-                {emp.nombre} {/* 👈 Se muestra el nombre */}
+                {emp.nombre}
               </option>
             ))}
           </select>
-
         </div>
 
         {/* Detalle del pedido */}
@@ -179,11 +176,7 @@ const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
           <h4 className="font-semibold text-gray-700 mb-2">Detalle del Pedido</h4>
           <div className="space-y-2">
             {detalles.map((d, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-12 gap-2 items-center border border-gray-200 rounded-lg p-2"
-              >
-                {/* Producto */}
+              <div key={i} className="grid grid-cols-12 gap-2 items-center border border-gray-200 rounded-lg p-2">
                 <select
                   className="col-span-5 border border-gray-300 p-2 rounded-lg"
                   value={d.id_producto ?? ""}
@@ -192,34 +185,24 @@ const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
                   <option value="">Seleccione producto</option>
                   {productos.map((p) => (
                     <option key={p.id_producto} value={p.id_producto}>
-                      {p.nombre_producto} — S/ {(p.precio ?? 0).toFixed(2)}
+                      {p.nombre_producto} — S/ {(p.precio_unitario ?? 0).toFixed(2)}
                     </option>
                   ))}
-
                 </select>
-
-
-
-                {/* Precio automático */}
                 <input
                   type="number"
                   className="col-span-3 border border-gray-300 p-2 rounded-lg bg-gray-100"
                   placeholder="Precio"
-                  value={d.Precio_unitario !== null ? String(d.Precio_unitario) : ""}
+                  value={d.precio_unitario !== null ? String(d.precio_unitario) : ""}
                   readOnly
                 />
-
-
-                {/* Cantidad */}
                 <input
                   type="number"
                   className="col-span-2 border border-gray-300 p-2 rounded-lg"
                   placeholder="Cant."
-                  value={String(d.Cantidad)}
-                  onChange={(e) => setDetalleField(i, 'Cantidad', Number(e.target.value))}
+                  value={String(d.cantidad)}
+                  onChange={(e) => setDetalleField(i, 'cantidad', Number(e.target.value))}
                 />
-
-                {/* Eliminar fila */}
                 <div className="col-span-2 flex justify-center">
                   <button
                     onClick={() => removeRow(i)}
@@ -231,7 +214,6 @@ const detalleValido = detalles.filter((d) => d.id_producto && d.Cantidad > 0);
                 </div>
               </div>
             ))}
-
             <button
               onClick={addRow}
               type="button"

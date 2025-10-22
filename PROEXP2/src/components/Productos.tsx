@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { ShoppingBag, Search } from 'lucide-react';
-import { api } from '../services/api';
-import type { Producto } from '../types/index';
+import { useState, useEffect } from "react";
+import { ShoppingBag, Plus, Search } from "lucide-react";
+import { api } from "../services/api";
+import type { Producto } from "../types/index";
+import CrearProducto from "./CrearProducto";
 
 export default function Productos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [showCrear, setShowCrear] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadProductos();
@@ -17,13 +19,18 @@ export default function Productos() {
       const data = await api.productos.getAll();
       setProductos(data);
     } catch (error) {
-      console.error('Error al cargar productos:', error);
+      console.error("❌ Error al cargar productos:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredProductos = productos.filter(p =>
+  const handleProductoCreado = (nuevo: Producto) => {
+    setProductos((prev) => [...prev, nuevo]);
+  };
+
+  // 🔎 Filtrado por nombre o categoría
+  const filteredProductos = productos.filter((p) =>
     p.Nombre_producto.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.Categoria.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -38,13 +45,22 @@ export default function Productos() {
 
   return (
     <div className="space-y-6">
+      {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <ShoppingBag className="w-8 h-8 text-red-600" />
-          <h2 className="text-3xl font-bold text-gray-800">Productos</h2>
+          <h2 className="text-3xl font-bold text-gray-800">Gestión de Productos</h2>
         </div>
+        <button
+          onClick={() => setShowCrear(true)}
+          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors shadow"
+        >
+          <Plus className="w-5 h-5" />
+          Nuevo Producto
+        </button>
       </div>
 
+      {/* 🔎 Buscador */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <input
@@ -56,40 +72,47 @@ export default function Productos() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProductos.map((producto) => (
+      {/* 🛒 Tarjetas de productos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {filteredProductos.map((p) => (
           <div
-            key={producto.Id_producto}
-            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200"
+            key={p.Id_producto}
+            className="flex flex-col justify-between p-6 bg-white border-l-4 border-red-500 rounded-xl shadow-md hover:shadow-lg transition"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                  {producto.Nombre_producto}
-                </h3>
-                <span className="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
-                  {producto.Categoria}
-                </span>
-              </div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-800">{p.Nombre_producto}</h3>
+              <ShoppingBag className="w-6 h-6 text-red-500" />
             </div>
-            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-              <span className="text-sm text-gray-600">Código:</span>
-              <span className="text-sm font-medium text-gray-800">{producto.Id_producto}</span>
+            <p className="mt-2 text-sm text-gray-500">{p.Categoria}</p>
+
+            <div className="mt-4">
+              <p className="text-sm text-gray-500">Código</p>
+              <p className="text-base font-medium text-gray-800">{p.Id_producto}</p>
             </div>
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-sm text-gray-600">Precio:</span>
-              <span className="text-2xl font-bold text-red-600">
-                S/ {producto.Precio_unitario.toFixed(2)}
-              </span>
+
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">Precio</p>
+              <p className="text-2xl font-bold text-red-600">
+                S/ {Number(p.Precio_unitario).toFixed(2)}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
+      {/* Mensaje si no hay resultados */}
       {filteredProductos.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No se encontraron productos</p>
         </div>
+      )}
+
+      {/* Modal Crear Producto */}
+      {showCrear && (
+        <CrearProducto
+          onClose={() => setShowCrear(false)}
+          onCreated={handleProductoCreado}
+        />
       )}
     </div>
   );

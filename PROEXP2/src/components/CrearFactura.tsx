@@ -68,8 +68,8 @@ export default function CrearFactura({ onClose, onCreated }: Props) {
     setSubmitting(true);
     try {
       const creado = await api.facturas.create(payload);
-      if (creado) {
-        onCreated(creado as Factura);
+      if (creado && creado.factura) {
+        onCreated(creado.factura);
         onClose();
       } else {
         alert('Factura creada, pero respuesta inesperada del servidor.');

@@ -68,7 +68,7 @@ export const createFactura = async (req, res) => {
   try {
     const pool = await getConnection();
 
-    // 1️⃣ Insertar factura
+    // 1️⃣ Insertar cabecera de factura
     const facturaResult = await pool.request()
       .input("cod_empleado", cod_empleado)
       .input("Tipo", Tipo || "Factura")
@@ -80,20 +80,41 @@ export const createFactura = async (req, res) => {
 
     const newFactura = facturaResult.recordset[0];
 
-    // 2️⃣ Insertar detalle
+    // 2️⃣ Insertar detalle (calculando subtotal desde BD)
     for (const d of detalle) {
       await pool.request()
         .input("Id_factura", newFactura.Id_factura)
         .input("Id_producto", d.Id_producto)
         .input("Cantidad", d.Cantidad)
-        .input("Subtotal", d.Subtotal)
         .query(`
           INSERT INTO Detalle_Factura (Id_factura, Id_producto, Cantidad, Subtotal)
-          VALUES (@Id_factura, @Id_producto, @Cantidad, @Subtotal)
+          SELECT @Id_factura, @Id_producto, @Cantidad, p.Precio_unitario * @Cantidad
+          FROM Producto p
+          WHERE p.Id_producto = @Id_producto
         `);
     }
 
-    res.json({ message: "✅ Factura creada correctamente", factura: newFactura });
+    // 3️⃣ Recuperar factura completa con empleado
+    const facturaCompleta = await pool.request()
+      .input("Id_factura", newFactura.Id_factura)
+      .query(`
+        SELECT 
+          f.Id_factura,
+          FORMAT(f.Fecha, 'yyyy-MM-dd') AS Fecha,
+          CONVERT(VARCHAR(5), f.Hora, 108) AS Hora,
+          f.Tipo,
+          per.nombre1 + ' ' + ISNULL(per.nombre2, '') + ' ' + per.apellido_paterno AS empleado
+        FROM Factura f
+        JOIN Empleado e ON f.cod_empleado = e.cod_empleado
+        JOIN Persona per ON e.id_persona = per.id_persona
+        WHERE f.Id_factura = @Id_factura
+      `);
+
+    res.json({
+      message: "✅ Factura creada correctamente",
+      factura: facturaCompleta.recordset[0]
+    });
+
   } catch (err) {
     console.error("❌ Error al crear factura:", err);
     res.status(500).json({ message: "Error al crear factura", error: err.message });

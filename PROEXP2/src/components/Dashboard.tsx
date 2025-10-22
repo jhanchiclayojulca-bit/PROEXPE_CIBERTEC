@@ -1,38 +1,66 @@
-import { ShoppingBag, FileText, Calendar, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { ShoppingBag, FileText, Calendar, TrendingUp, Users, DollarSign } from "lucide-react";
+import { api } from "../services/api";
 
 export default function Dashboard() {
+  const [ventasDia, setVentasDia] = useState(0);
+  const [pedidosActivos, setPedidosActivos] = useState(0);
+  const [facturasEmitidas, setFacturasEmitidas] = useState(0);
+  const [reservasHoy, setReservasHoy] = useState(0);
+  const [productosTop, setProductosTop] = useState<any[]>([]);
+  const [empleadosRendimiento, setEmpleadosRendimiento] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const vd = await api.reportes.ventasDia();
+        const pa = await api.reportes.pedidosActivos();
+        const fe = await api.reportes.facturasEmitidas();
+        const rh = await api.reportes.reservasHoy();
+        const pt = await api.reportes.productosTop();
+        const er = await api.reportes.empleadosRendimiento();
+
+        setVentasDia(vd?.VentasDia ?? 0);
+        setPedidosActivos(pa?.PedidosActivos ?? 0);
+        setFacturasEmitidas(fe?.FacturasEmitidas ?? 0);
+        setReservasHoy(rh?.ReservasHoy ?? 0);
+        setProductosTop(pt ?? []);
+        setEmpleadosRendimiento(er ?? []);
+      } catch (err) {
+        console.error("❌ Error cargando dashboard:", err);
+      }
+    };
+    loadData();
+  }, []);
+
   const stats = [
     {
-      title: 'Ventas del Día',
-      value: 'S/ 1,250.00',
+      title: "Ventas del Día",
+      value: `S/ ${ventasDia.toFixed(2)}`,
       icon: DollarSign,
-      color: 'bg-green-500',
-      bgLight: 'bg-green-50',
-      textColor: 'text-green-600'
+      bgLight: "bg-green-50",
+      textColor: "text-green-600",
     },
     {
-      title: 'Pedidos Activos',
-      value: '24',
+      title: "Pedidos Activos",
+      value: pedidosActivos,
       icon: ShoppingBag,
-      color: 'bg-blue-500',
-      bgLight: 'bg-blue-50',
-      textColor: 'text-blue-600'
+      bgLight: "bg-blue-50",
+      textColor: "text-blue-600",
     },
     {
-      title: 'Facturas Emitidas',
-      value: '18',
+      title: "Facturas Emitidas",
+      value: facturasEmitidas,
       icon: FileText,
-      color: 'bg-purple-500',
-      bgLight: 'bg-purple-50',
-      textColor: 'text-purple-600'
+      bgLight: "bg-purple-50",
+      textColor: "text-purple-600",
     },
     {
-      title: 'Reservas Hoy',
-      value: '12',
+      title: "Reservas Hoy",
+      value: reservasHoy,
       icon: Calendar,
-      color: 'bg-orange-500',
-      bgLight: 'bg-orange-50',
-      textColor: 'text-orange-600'
+      bgLight: "bg-orange-50",
+      textColor: "text-orange-600",
     },
   ];
 
@@ -43,6 +71,7 @@ export default function Dashboard() {
         <p className="text-gray-600">Resumen general del sistema de ventas</p>
       </div>
 
+      {/* 📊 Tarjetas de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <div
@@ -62,27 +91,25 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* 📈 Productos más vendidos y rendimiento empleados */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Productos más vendidos */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-4">
             <TrendingUp className="w-6 h-6 text-red-600" />
             <h3 className="text-xl font-semibold text-gray-800">Productos Más Vendidos</h3>
           </div>
           <div className="space-y-4">
-            {[
-              { name: 'Pollo a la brasa', sold: 45, percentage: 85 },
-              { name: 'Inka Cola 1L', sold: 38, percentage: 72 },
-              { name: 'Papas fritas', sold: 32, percentage: 60 },
-            ].map((product) => (
-              <div key={product.name}>
+            {productosTop.map((p, i) => (
+              <div key={i}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{product.name}</span>
-                  <span className="text-sm text-gray-500">{product.sold} unidades</span>
+                  <span className="text-sm font-medium text-gray-700">{p.Nombre_producto}</span>
+                  <span className="text-sm text-gray-500">{p.TotalVendidos} unidades</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-red-600 h-2 rounded-full transition-all"
-                    style={{ width: `${product.percentage}%` }}
+                    style={{ width: `${Math.min(100, p.TotalVendidos)}%` }}
                   ></div>
                 </div>
               </div>
@@ -90,27 +117,24 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Rendimiento de empleados */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-4">
             <Users className="w-6 h-6 text-red-600" />
             <h3 className="text-xl font-semibold text-gray-800">Rendimiento de Empleados</h3>
           </div>
           <div className="space-y-4">
-            {[
-              { name: 'Juan Pérez', sales: 'S/ 2,450.00', orders: 15 },
-              { name: 'María López', sales: 'S/ 1,980.00', orders: 12 },
-              { name: 'Luis Ramírez', sales: 'S/ 1,750.00', orders: 10 },
-            ].map((employee) => (
+            {empleadosRendimiento.map((e, i) => (
               <div
-                key={employee.name}
+                key={i}
                 className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
               >
                 <div>
-                  <p className="font-medium text-gray-800">{employee.name}</p>
-                  <p className="text-sm text-gray-500">{employee.orders} pedidos</p>
+                  <p className="font-medium text-gray-800">{e.Empleado}</p>
+                  <p className="text-sm text-gray-500">{e.TotalPedidos} pedidos</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-red-600">{employee.sales}</p>
+                  <p className="font-semibold text-red-600">S/ {e.TotalVentas.toFixed(2)}</p>
                 </div>
               </div>
             ))}

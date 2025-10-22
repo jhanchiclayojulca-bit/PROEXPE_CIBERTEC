@@ -9,6 +9,11 @@ import reservasRouter from "./routes/reservas.js";
 import empleadosRouter from "./routes/empleados.js";
 import clientesRouter from "./routes/clientes.js";
 import sedeRouter from "./routes/sedes.js";
+import productoRouter from "./routes/producto.js";
+import reportesRouter from "./routes/reportes.js";
+import authRouter from "./routes/auth.js";
+
+import { verifyToken } from "./middleware/authMiddleware.js";
 
 const app = express();
 
@@ -19,14 +24,19 @@ app.use(express.json());
 // Ruta de prueba
 app.get("/ping", (req, res) => res.send("pong"));
 
-// Rutas API
-app.use("/api/pedidos", pedidosRouter);
-app.use("/api/productos", productosRouter);
+// 👇 Rutas de autenticación (públicas)
+app.use("/api/auth", authRouter);
+// 👇 Rutas protegidas (requieren token)
+app.use("/api/pedidos",  pedidosRouter);
+app.use("/api/productos",  productosRouter);
 app.use("/api/facturas", facturasRouter);
 app.use("/api/reservas", reservasRouter);
 app.use("/api/empleados", empleadosRouter);
 app.use("/api/clientes", clientesRouter);
 app.use("/api/sedes", sedeRouter);
+app.use("/api/producto", productoRouter);
+app.use("/api/reportes", reportesRouter);
+
 
 // Listar endpoints disponibles
 console.log("📚 Endpoints disponibles:");

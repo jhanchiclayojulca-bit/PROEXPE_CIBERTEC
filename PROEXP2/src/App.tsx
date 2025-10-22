@@ -35,12 +35,11 @@ function App() {
     }
   }, []);
 
-  const handleLogin = (userRole: 'admin' | 'cliente') => {
-    localStorage.setItem('token', 'fake-jwt-token');
-    localStorage.setItem('role', userRole);
-    setRole(userRole);
-    setIsAuthenticated(true);
-  };
+const handleLogin = (userRole: 'admin' | 'cliente') => {
+  setRole(userRole);
+  setIsAuthenticated(true);
+};
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -67,10 +66,11 @@ function App() {
 
   // Render según rol
   const renderView = () => {
-    if (role === 'cliente') {
-      return <ClientPanel currentView={currentView} />;
-    }
+  if (role === 'cliente') {
+    return <ClientPanel currentView={currentView} />;
+  }
 
+  if (role === 'admin') {
     switch (currentView) {
       case 'dashboard':
         return <Dashboard />;
@@ -85,7 +85,11 @@ function App() {
       default:
         return <Dashboard />;
     }
-  };
+  }
+
+  return <Dashboard />; // fallback
+};
+
 
   // Si no está logueado
   if (!isAuthenticated) {
