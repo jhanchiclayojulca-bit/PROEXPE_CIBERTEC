@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import type { Factura } from '../types/index';
 
 export const generarReporteVentasEmpleado = (data: Array<{ cod_empleado: string; Empleado: string; Total_Ventas: number }>) => {
   const doc = new jsPDF();
@@ -88,7 +89,7 @@ export const generarReporteIngresosDiarios = (data: Array<{ Fecha: string; Factu
 };
 
 export const generarFactura = (
-  factura: { Id_factura: string; Fecha: string; Hora: string; Tipo: string },
+  factura: Factura,   // ✅ ahora usas tu tipo real
   detalles: Array<{ Nombre_producto: string; Cantidad: number; Precio_unitario: number; Subtotal: number }>,
   empleado: string
 ) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Plus, Eye, X, Search } from 'lucide-react';
+import { ClipboardList, Plus, Eye, X, Search, Trash2 } from 'lucide-react'; // 👈 Agrego Trash2
 import { api } from '../services/api';
 import type { Pedido, DetallePedido } from '../types/index';
 import CrearPedido from './CrearPedido';
@@ -50,6 +50,17 @@ export default function Pedidos() {
 
   const handlePedidoCreado = (nuevoPedido: Pedido) => {
     setPedidos((prev) => [...prev, nuevoPedido]);
+  };
+
+  // 🗑️ Eliminar pedido
+  const eliminarPedido = async (id: number) => {
+    if (!confirm("¿Seguro que deseas eliminar este pedido?")) return;
+    try {
+      await api.pedidos.delete(id);
+      setPedidos((prev) => prev.filter((p) => p.id_pedido !== id));
+    } catch (err) {
+      console.error("❌ Error al eliminar pedido:", err);
+    }
   };
 
   // 🔎 Filtrado de pedidos por búsqueda
@@ -135,13 +146,20 @@ export default function Pedidos() {
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {pedido.empleado_nombre}
                     </td>
-                    <td className="px-6 py-4 text-sm">
+                    <td className="px-6 py-4 flex gap-2">
                       <button
                         onClick={() => verDetalle(pedido)}
                         className="flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium hover:bg-red-200 transition"
                       >
                         <Eye className="w-4 h-4" />
                         Ver detalle
+                      </button>
+                      <button
+                        onClick={() => eliminarPedido(pedido.id_pedido)}
+                        className="flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium hover:bg-gray-200 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
                       </button>
                     </td>
                   </tr>

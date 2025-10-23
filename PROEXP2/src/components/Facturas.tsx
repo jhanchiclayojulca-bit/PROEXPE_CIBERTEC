@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Eye, Plus, X, Search } from "lucide-react";
+import { FileText, Download, Eye, Plus, X, Search, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import { generarFactura } from "../utils/pdfGenerator";
 import type { Factura, DetalleFactura } from "../types/index";
@@ -28,15 +28,16 @@ export default function Facturas() {
     }
   };
 
-  const verDetalle = async (factura: Factura) => {
-    try {
-      const data = await api.facturas.getDetalle(Number(factura.Id_factura));
-      setDetalle(data);
-      setSelectedFactura(factura);
-    } catch (error) {
-      console.error("Error al cargar detalle:", error);
-    }
-  };
+const verDetalle = async (factura: Factura) => {
+  try {
+    const data = await api.facturas.getDetalle(factura.Id_factura); // ✅ directo, ya es number
+    setDetalle(data);
+    setSelectedFactura(factura);
+  } catch (error) {
+    console.error("Error al cargar detalle:", error);
+  }
+};
+
 
   const descargarPDF = () => {
     if (selectedFactura && detalle.length > 0) {
@@ -56,6 +57,17 @@ export default function Facturas() {
 
   const handleFacturaCreada = (nuevaFactura: Factura) => {
     setFacturas((prev) => [nuevaFactura, ...prev]);
+  };
+
+  const handleEliminar = async (id: number) => {
+    if (!confirm("¿Seguro que deseas eliminar esta factura?")) return;
+    try {
+      await api.facturas.delete(id);
+      setFacturas((prev) => prev.filter((f) => f.Id_factura !== id));
+    } catch (error) {
+      console.error("❌ Error eliminando factura:", error);
+      alert("Error al eliminar factura");
+    }
   };
 
   // Filtrar facturas según búsqueda
@@ -161,13 +173,20 @@ export default function Facturas() {
                     <td className="px-6 py-4 text-sm text-gray-700">
                       {factura.empleado}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 flex gap-3">
                       <button
                         onClick={() => verDetalle(factura)}
                         className="flex items-center gap-1 text-red-600 font-medium hover:text-red-800 transition"
                       >
                         <Eye className="w-4 h-4" />
                         Ver
+                      </button>
+                      <button
+                        onClick={() => handleEliminar(factura.Id_factura)}
+                        className="flex items-center gap-1 text-red-600 font-medium hover:text-red-800 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
                       </button>
                     </td>
                   </tr>
@@ -187,7 +206,7 @@ export default function Facturas() {
         </div>
       </div>
 
-      {/* Modal Detalle (se mantiene igual) */}
+      {/* Modal Detalle */}
       {selectedFactura && detalle.length > 0 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"

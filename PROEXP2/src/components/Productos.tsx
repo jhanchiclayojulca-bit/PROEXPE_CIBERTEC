@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShoppingBag, Plus, Search } from "lucide-react";
+import { ShoppingBag, Plus, Search, Trash2, Pencil } from "lucide-react";
 import { api } from "../services/api";
 import type { Producto } from "../types/index";
 import CrearProducto from "./CrearProducto";
@@ -8,6 +8,7 @@ export default function Productos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCrear, setShowCrear] = useState(false);
+  const [editingProducto, setEditingProducto] = useState<Producto | null>(null); // 👈 para editar
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -27,6 +28,24 @@ export default function Productos() {
 
   const handleProductoCreado = (nuevo: Producto) => {
     setProductos((prev) => [...prev, nuevo]);
+  };
+
+  const handleProductoEditado = (editado: Producto) => {
+    setProductos((prev) =>
+      prev.map((p) => (p.Id_producto === editado.Id_producto ? editado : p))
+    );
+  };
+
+  const eliminarProducto = async (id: number) => {
+    if (!confirm("¿Seguro que deseas eliminar este producto?")) return;
+    try {
+      await api.productos.delete(id);
+      setProductos((prev) => prev.filter((p) => p.Id_producto !== id));
+      alert("✅ Producto eliminado correctamente");
+    } catch (err) {
+      console.error("❌ Error al eliminar producto:", err);
+      alert("Error al eliminar producto");
+    }
   };
 
   // 🔎 Filtrado por nombre o categoría
@@ -96,6 +115,24 @@ export default function Productos() {
                 S/ {Number(p.Precio_unitario).toFixed(2)}
               </p>
             </div>
+
+            {/* Botones acciones */}
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setEditingProducto(p)}
+                className="flex items-center gap-1 px-3 py-1 text-sm rounded-md bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+              >
+                <Pencil className="w-4 h-4" />
+                Editar
+              </button>
+              <button
+                onClick={() => eliminarProducto(p.Id_producto)}
+                className="flex items-center gap-1 px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200"
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -112,6 +149,15 @@ export default function Productos() {
         <CrearProducto
           onClose={() => setShowCrear(false)}
           onCreated={handleProductoCreado}
+        />
+      )}
+
+      {/* Modal Editar Producto */}
+      {editingProducto && (
+        <CrearProducto
+          producto={editingProducto}   // 👈 pasamos el producto a editar
+          onClose={() => setEditingProducto(null)}
+          onCreated={handleProductoEditado} // lo reutilizamos
         />
       )}
     </div>

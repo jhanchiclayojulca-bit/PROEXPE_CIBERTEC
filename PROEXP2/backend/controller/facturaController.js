@@ -120,3 +120,29 @@ export const createFactura = async (req, res) => {
     res.status(500).json({ message: "Error al crear factura", error: err.message });
   }
 };
+
+
+/* ============================
+   🔹 Eliminar factura por ID
+   ============================ */
+export const deleteFactura = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = await getConnection();
+
+    // Primero eliminamos detalles
+    await pool.request()
+      .input("Id_factura", sql.Int, id)
+      .query("DELETE FROM Detalle_Factura WHERE Id_factura = @Id_factura");
+
+    // Luego eliminamos la factura
+    await pool.request()
+      .input("Id_factura", sql.Int, id)
+      .query("DELETE FROM Factura WHERE Id_factura = @Id_factura");
+
+    res.json({ message: "🗑️ Factura eliminada correctamente" });
+  } catch (err) {
+    console.error("❌ Error al eliminar factura:", err);
+    res.status(500).json({ message: "Error al eliminar factura", error: err.message });
+  }
+};

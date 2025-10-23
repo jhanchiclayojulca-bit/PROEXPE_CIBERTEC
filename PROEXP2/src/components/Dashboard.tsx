@@ -71,7 +71,7 @@ export default function Dashboard() {
         <p className="text-gray-600">Resumen general del sistema de ventas</p>
       </div>
 
-      {/* 📊 Tarjetas de resumen */}
+      {/* 📊 Tarjetas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <div
@@ -91,20 +91,26 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* 📈 Productos más vendidos y rendimiento empleados */}
+      {/* 📈 Productos + empleados */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Productos más vendidos */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-4">
             <TrendingUp className="w-6 h-6 text-red-600" />
-            <h3 className="text-xl font-semibold text-gray-800">Productos Más Vendidos</h3>
+            <h3 className="text-xl font-semibold text-gray-800">
+              Productos Más Vendidos
+            </h3>
           </div>
           <div className="space-y-4">
             {productosTop.map((p, i) => (
               <div key={i}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{p.Nombre_producto}</span>
-                  <span className="text-sm text-gray-500">{p.TotalVendidos} unidades</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {p.Nombre_producto}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {p.TotalVendidos} unidades
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -117,11 +123,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Rendimiento de empleados */}
+        {/* Rendimiento empleados */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-4">
             <Users className="w-6 h-6 text-red-600" />
-            <h3 className="text-xl font-semibold text-gray-800">Rendimiento de Empleados</h3>
+            <h3 className="text-xl font-semibold text-gray-800">
+              Rendimiento de Empleados
+            </h3>
           </div>
           <div className="space-y-4">
             {empleadosRendimiento.map((e, i) => (
@@ -131,10 +139,14 @@ export default function Dashboard() {
               >
                 <div>
                   <p className="font-medium text-gray-800">{e.Empleado}</p>
-                  <p className="text-sm text-gray-500">{e.TotalPedidos} pedidos</p>
+                  <p className="text-sm text-gray-500">
+                    {e.TotalPedidos} pedidos
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-red-600">S/ {e.TotalVentas.toFixed(2)}</p>
+                  <p className="font-semibold text-red-600">
+                    S/ {e.TotalVentas.toFixed(2)}
+                  </p>
                 </div>
               </div>
             ))}

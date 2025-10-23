@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import type { Producto } from "../types/index";
 
 type Props = {
+  producto?: Producto;
   onClose: () => void;
   onCreated: (producto: Producto) => void;
 };

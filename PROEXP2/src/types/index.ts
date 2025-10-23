@@ -22,7 +22,7 @@ export interface Empleado {
 }
 
 export interface Factura {
-  Id_factura: string;
+  Id_factura: number;
   Fecha: string;
   Hora: string;
   Tipo: string;
@@ -31,9 +31,9 @@ export interface Factura {
 }
 
 export interface DetalleFactura {
-  Id_detalle_factura: string;
-  Id_factura: string;
-  Id_producto: string;
+  Id_detalle_factura: number;
+  Id_factura: number;
+  Id_producto: number;
   Nombre_producto?: string;
   Precio_unitario?: number;
   Cantidad: number;

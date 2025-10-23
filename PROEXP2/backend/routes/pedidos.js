@@ -135,5 +135,33 @@ const pedidoCompleto = await pool.request()
   }
 });
 
+// DELETE /api/pedidos/:id
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const pool = await getConnection();
+
+    // Primero eliminamos los detalles asociados
+    await pool.request()
+      .input("id_pedido", id)
+      .query(`DELETE FROM Detalle_Pedido WHERE id_pedido = @id_pedido`);
+
+    // Luego eliminamos el pedido
+    const result = await pool.request()
+      .input("id_pedido", id)
+      .query(`DELETE FROM Pedido WHERE id_pedido = @id_pedido`);
+
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({ message: "Pedido no encontrado" });
+    }
+
+    res.json({ message: "✅ Pedido eliminado correctamente" });
+  } catch (err) {
+    console.error("❌ Error al eliminar pedido:", err);
+    res.status(500).json({ message: "Error al eliminar pedido", error: err.message });
+  }
+});
+
 
 export default router;

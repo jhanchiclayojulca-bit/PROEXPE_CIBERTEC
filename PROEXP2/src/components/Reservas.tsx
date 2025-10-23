@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Calendar, PlusCircle, Users, Clock, Search } from "lucide-react";
+import { Calendar, PlusCircle, Users, Clock, Search, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import type { Reserva, Sede } from "../types/index";
 import CrearReserva from "./CrearReserva";
@@ -44,6 +44,18 @@ export default function Reservas() {
     (r.nombre_cliente || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  // 🔹 Eliminar reserva
+  const handleEliminar = async (id: number) => {
+    if (!confirm("¿Seguro que deseas eliminar esta reserva?")) return;
+    try {
+      await api.reservas.delete(id);
+      setReservas((prev) => prev.filter((res) => res.cod_reserva !== id));
+    } catch (err) {
+      console.error("❌ Error eliminando reserva:", err);
+      alert("Error al eliminar reserva");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -52,7 +64,7 @@ export default function Reservas() {
         <h2 className="text-2xl font-bold text-gray-800">Gestión de Reservas</h2>
       </div>
 
-      {/* 🔎 Buscador y Botón en la misma fila */}
+      {/* 🔎 Buscador y Botón */}
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -143,6 +155,16 @@ export default function Reservas() {
                 <p className="text-gray-600 text-sm italic border-t pt-2">
                   {r.comentario || "Sin comentario"}
                 </p>
+
+                {/* Botón eliminar */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => handleEliminar(r.cod_reserva)}
+                    className="flex items-center gap-2 bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium hover:bg-red-200 transition"
+                  >
+                    <Trash2 className="w-4 h-4" /> Eliminar
+                  </button>
+                </div>
               </div>
             );
           })}

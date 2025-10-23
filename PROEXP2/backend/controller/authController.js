@@ -7,28 +7,19 @@ const SECRET_KEY = process.env.JWT_SECRET || "mi_clave_secreta";
 
 // 🔹 Registro
 export const register = async (req, res) => {
-  const { nombre, apellido, telefono, email, password, rol } = req.body;
-
   try {
+    const { nombre, apellido, telefono, email, password } = req.body;
+
+    // 🔒 forzamos rol = cliente siempre
+    const rol = "cliente";
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const pool = await getConnection();
 
-    // 🔍 Verificar si el correo ya existe
-    const exists = await pool.request()
-      .input("Correo", sql.NVarChar, email)
-      .query("SELECT Id_usuario FROM Usuario WHERE Correo = @Correo");
-
-    if (exists.recordset.length > 0) {
-      return res.status(400).json({ message: "El correo ya está registrado" });
-    }
-
-    // 🔑 Hashear contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 📝 Insertar nuevo usuario
     await pool.request()
       .input("Nombre", sql.NVarChar, nombre)
       .input("Apellido", sql.NVarChar, apellido)
-      .input("Telefono", sql.NVarChar, telefono || null)
+      .input("Telefono", sql.NVarChar, telefono)
       .input("Correo", sql.NVarChar, email)
       .input("Contrasena", sql.NVarChar, hashedPassword)
       .input("Rol", sql.NVarChar, rol)
@@ -39,10 +30,11 @@ export const register = async (req, res) => {
 
     res.json({ message: "✅ Registro exitoso" });
   } catch (err) {
-    console.error("❌ Error en register:", err);
-    res.status(500).json({ message: "Error al registrar usuario", error: err.message });
+    console.error("❌ Error en registro:", err);
+    res.status(500).json({ message: "Error al registrar usuario" });
   }
 };
+
 
 // 🔹 Login
 export const login = async (req, res) => {

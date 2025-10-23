@@ -85,3 +85,18 @@ export async function crearReserva(req, res) {
     res.status(500).json({ message: "Error al crear reserva", error: error.message });
   }
 }
+export async function eliminarReserva(req, res) {
+  try {
+    const { id } = req.params;
+
+    const pool = await getConnection();
+    await pool.request()
+      .input("cod_reserva", sql.Int, id)
+      .query("DELETE FROM Reserva WHERE cod_reserva = @cod_reserva");
+
+    res.json({ message: "🗑️ Reserva eliminada correctamente" });
+  } catch (error) {
+    console.error("❌ Error al eliminar reserva:", error.message);
+    res.status(500).json({ message: "Error al eliminar reserva", error: error.message });
+  }
+}

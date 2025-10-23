@@ -14,46 +14,45 @@ export default function Login({ onLogin }: LoginProps) {
     nombre: "",
     apellido: "",
     telefono: "",
-    rol: "cliente" as "admin" | "cliente",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  try {
-    if (isLogin) {
-      // 🔑 LOGIN real
-      const data = await api.auth.login({
-        email: formData.email,
-        password: formData.password,
-      });
+    try {
+      if (isLogin) {
+        // 🔑 LOGIN real
+        const data = await api.auth.login({
+          email: formData.email,
+          password: formData.password,
+        });
 
-      // Guardar en localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.rol); // 👈 usamos siempre "role"
-      localStorage.setItem("nombre", data.nombre);
+        // Guardar en localStorage
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.rol); // 👈 siempre "role"
+        localStorage.setItem("nombre", data.nombre);
 
-      onLogin(data.rol as "admin" | "cliente"); // 👈 corregido
-
-    } else {
-      // 📝 REGISTRO real
-      await api.auth.register(formData);
-      alert("✅ Registro exitoso, ahora inicia sesión."); 
-      setIsLogin(true);
+        onLogin(data.rol as "admin" | "cliente");
+      } else {
+        // 📝 REGISTRO real (backend forzará rol = cliente)
+        await api.auth.register(formData);
+        alert("✅ Registro exitoso, ahora inicia sesión.");
+        setIsLogin(true);
+      }
+    } catch (err) {
+      setError("❌ Error en autenticación, revisa tus datos.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    setError("❌ Error en autenticación, revisa tus datos.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -67,24 +66,36 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <ChefHat className="w-12 h-12 text-red-600" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Pardos Chicken</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Pardos Chicken
+            </h1>
             <p className="text-red-100">Sistema de Ventas</p>
           </div>
 
           <div className="p-8">
             <div className="flex gap-2 mb-6">
               <button
-                onClick={() => { setIsLogin(true); setError(""); }}
+                onClick={() => {
+                  setIsLogin(true);
+                  setError("");
+                }}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                  isLogin ? "bg-red-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  isLogin
+                    ? "bg-red-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 Iniciar Sesión
               </button>
               <button
-                onClick={() => { setIsLogin(false); setError(""); }}
+                onClick={() => {
+                  setIsLogin(false);
+                  setError("");
+                }}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                  !isLogin ? "bg-red-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  !isLogin
+                    ? "bg-red-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 Registrarse
@@ -95,49 +106,92 @@ const handleSubmit = async (e: React.FormEvent) => {
               {!isLogin && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre
+                    </label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} required className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Tu nombre" />
+                      <input
+                        type="text"
+                        name="nombre"
+                        value={formData.nombre}
+                        onChange={handleChange}
+                        required
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="Tu nombre"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Apellido</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Apellido
+                    </label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input type="text" name="apellido" value={formData.apellido} onChange={handleChange} required className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Tu apellido" />
+                      <input
+                        type="text"
+                        name="apellido"
+                        value={formData.apellido}
+                        onChange={handleChange}
+                        required
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="Tu apellido"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Teléfono
+                    </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="999 999 999" />
+                      <input
+                        type="tel"
+                        name="telefono"
+                        value={formData.telefono}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="999 999 999"
+                      />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Usuario</label>
-                    <select name="rol" value={formData.rol} onChange={handleChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                      <option value="cliente">Cliente</option>
-                      <option value="admin">Administrador</option>
-                    </select>
-                  </div>
+                  {/* 👇 Eliminado el select de rol */}
                 </>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Correo Electrónico
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="correo@ejemplo.com" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="correo@ejemplo.com"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contraseña
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input type="password" name="password" value={formData.password} onChange={handleChange} required className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="••••••••" />
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="••••••••"
+                  />
                 </div>
               </div>
 
@@ -152,7 +206,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {loading ? "Procesando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+                {loading
+                  ? "Procesando..."
+                  : isLogin
+                  ? "Iniciar Sesión"
+                  : "Crear Cuenta"}
               </button>
             </form>
           </div>

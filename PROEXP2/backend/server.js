@@ -12,6 +12,7 @@ import sedeRouter from "./routes/sedes.js";
 import productoRouter from "./routes/producto.js";
 import reportesRouter from "./routes/reportes.js";
 import authRouter from "./routes/auth.js";
+import usuarioRouter from "./routes/usuario.js";
 
 import { verifyToken } from "./middleware/authMiddleware.js";
 
@@ -36,6 +37,7 @@ app.use("/api/clientes", clientesRouter);
 app.use("/api/sedes", sedeRouter);
 app.use("/api/producto", productoRouter);
 app.use("/api/reportes", reportesRouter);
+app.use("/api/usuarios",  usuarioRouter);
 
 
 // Listar endpoints disponibles

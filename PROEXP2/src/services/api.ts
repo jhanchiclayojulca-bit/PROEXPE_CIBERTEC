@@ -39,6 +39,17 @@ async function put(endpoint: string, data: unknown) {
   return response.json();
 }
 
+async function patch(endpoint: string, data: unknown) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Error en la solicitud PATCH");
+  return response.json();
+}
+
+
 async function del(endpoint: string) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, { method: "DELETE" , headers: getAuthHeaders() });
   if (!response.ok) throw new Error("Error en la solicitud DELETE");
@@ -49,6 +60,7 @@ export const api = {
   get,
   post,
   put,
+  patch,
   delete: del,
 
     // 🔹 AUTH
@@ -57,13 +69,13 @@ export const api = {
       post("/auth/login", data),
 
     register: (data: {
-      nombre: string;
-      apellido: string;
-      telefono: string;
-      email: string;
-      password: string;
-      rol: "admin" | "cliente";
-    }) => post("/auth/register", data),
+    nombre: string;
+    apellido: string;
+    telefono: string;
+    email: string;
+    password: string;
+    rol?: "admin" | "cliente";   // ✅ ahora opcional
+  }) => post("/auth/register", data),
 
     logout: (token: string) => 
       post("/auth/logout", { token }),
@@ -74,10 +86,11 @@ export const api = {
     getAll: () => get("/pedidos"),
     getDetalle: (id: number) => get(`/pedidos/${id}/detalle`), // 👈 ahora recibe number
     create: (data: unknown) => post("/pedidos", data),
+     delete: (id: number) => del(`/pedidos/${id}`), // 👈 agregado
   },
   
 reservas: {
-  // ✅ Crear reserva con nombre_cliente (el backend crea cliente + reserva)
+  getAll: () => api.get("/reservas"),
   create: (data: {
     nombre_cliente: string;
     cod_sede: number;
@@ -85,11 +98,10 @@ reservas: {
     hora: string;
     cantidad_personas: number;
     comentario?: string;
-  }) => post("/reservas", data),
-
-  // ✅ Obtener todas
-  getAll: () => get("/reservas"),
+  }) => api.post("/reservas", data),
+  delete: (id: number) => api.delete(`/reservas/${id}`), // 👈 aquí lo agregas
 },
+
 
   productos: {
     // ✅ GET todos los productos
@@ -97,6 +109,12 @@ reservas: {
 
     // ✅ POST nuevo producto
     create: (data: any) => post("/producto", data),
+
+    // ✅ DELETE producto por ID
+    delete: (id: number) => del(`/producto/${id}`),
+
+    // ✅ PUT actualizar producto por ID
+    update: (id: number, data: any) => put(`/producto/${id}`, data),
   },
 
   clientes: {
@@ -111,11 +129,13 @@ reservas: {
     getById: (id: string) => get(`/empleado/${id}`),
   },
 
-  facturas: {
+facturas: {
   getAll: () => get("/facturas"),
-  getDetalle: (id: number) => api.get(`/facturas/${id}/detalle`),
-  create: (data: any) => api.post("/facturas", data),
+  getDetalle: (id: number) => get(`/facturas/${id}/detalle`),
+  create: (data: any) => post("/facturas", data),
+  delete: (id: number) => del(`/facturas/${id}`),  // 👈 este es el que te faltaba
 },
+
 
   sedes: {
     getAll: () => get("/sedes"),
@@ -135,5 +155,16 @@ reportes: {
   ventasEmpleado: () => get("/reportes/ventas-empleado"),
   ingresosDiarios: () => get("/reportes/ingresos-diarios"),
 },
+
+usuarios: {
+  getAll: () => api.get("/usuarios"),
+  create: (data: any) => api.post("/usuarios", data),
+  update: (id: number, data: any) => api.put(`/usuarios/${id}`, data),
+  updateRol: (id: number, rol: string) => api.patch(`/usuarios/${id}/rol`, { rol }),
+  delete: (id: number) => api.delete(`/usuarios/${id}`)
+}
+
+
+
 
 };
